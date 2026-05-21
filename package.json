@@ -1,0 +1,11 @@
+{
+  "name": "pananth-html",
+  "version": "15.4.2.103",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "latest"
+  }
+}

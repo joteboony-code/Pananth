@@ -1,0 +1,84 @@
+name: Patch Pananth month badge text
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/patch-month-badge.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Patch month badge display text
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const files = ['public/index.html', 'index.html'];
+          const marker = '<!-- PANANTH_MONTH_BADGE_SHORT_TEXT_PATCH -->';
+          const script = `${marker}
+          <script>
+          (function(){
+            function pananthShortMonthBadgeText(){
+              try{
+                document.querySelectorAll('body *').forEach(function(el){
+                  if (!el || el.children.length) return;
+                  var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+                  if (!text) return;
+                  if (text.length > 80) return;
+                  var m = text.match(/^รอบบิล\s+(.+?)\s*\/\s*รับชำระ\s+.+$/);
+                  if (m && m[1]) el.textContent = 'รอบเดือน ' + m[1].trim();
+                });
+              }catch(e){}
+            }
+            document.addEventListener('DOMContentLoaded', pananthShortMonthBadgeText);
+            setTimeout(pananthShortMonthBadgeText, 200);
+            setTimeout(pananthShortMonthBadgeText, 1000);
+            if (window.MutationObserver) {
+              var obs = new MutationObserver(function(){ pananthShortMonthBadgeText(); });
+              document.addEventListener('DOMContentLoaded', function(){
+                if (document.body) obs.observe(document.body, { childList:true, subtree:true, characterData:true });
+              });
+            }
+          })();
+          </script>`;
+
+          let changed = false;
+          for (const file of files) {
+            if (!fs.existsSync(file)) continue;
+            let html = fs.readFileSync(file, 'utf8');
+            if (html.includes(marker)) {
+              console.log('already patched', file);
+              continue;
+            }
+            if (!html.includes('</body>')) {
+              console.error('No </body> found in ' + file);
+              process.exit(1);
+            }
+            html = html.replace('</body>', script + '\n</body>');
+            fs.writeFileSync(file, html);
+            changed = true;
+            console.log('patched', file);
+          }
+          if (!changed) console.log('No changes needed');
+          NODE
+
+      - name: Commit patch
+        run: |
+          if git diff --quiet; then
+            echo "No file changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/index.html index.html
+          git commit -m "Shorten rental month badge"
+          git push

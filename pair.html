@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ป่านันท์ • จับคู่ LINE ผู้เช่าใหม่ v15.4.2.79</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Kanit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    :root{
+      --bg:#f3f6fb;--card:#fff;--primary:#173a63;--accent:#e4a43b;--text:#142033;
+      --muted:#667085;--border:#dbe4f1;--green:#15803d;--greenBg:#eaf8ef;
+      --orange:#b45309;--orangeBg:#fff4e5;--red:#c2410c;--redBg:#fff0ea;
+      --shadow:0 14px 34px rgba(23,58,99,.10);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:linear-gradient(180deg,#edf4ff 0%,var(--bg) 36%,var(--bg) 100%);
+      color:var(--text);font-family:'Sarabun',sans-serif;min-height:100vh;
+    }
+    .wrap{max-width:560px;margin:0 auto;padding:18px 14px 32px}
+    .hero{
+      background:linear-gradient(135deg,#173a63,#265f9e);color:#fff;border-radius:24px;
+      padding:18px 16px;box-shadow:var(--shadow);margin-bottom:14px;
+    }
+    .brand{font-family:'Kanit',sans-serif;font-weight:800;font-size:14px;opacity:.92}
+    h1{font-family:'Kanit',sans-serif;font-size:24px;line-height:1.2;margin:8px 0 6px}
+    .hero p{margin:0;opacity:.9;line-height:1.55;font-size:14px}
+    .card{
+      background:var(--card);border:1px solid var(--border);border-radius:20px;padding:16px;
+      box-shadow:var(--shadow);margin-bottom:12px;
+    }
+    .status{
+      border-radius:14px;padding:12px;font-size:14px;line-height:1.6;border:1px solid var(--border);
+      background:#f7faff;color:var(--primary);margin-bottom:12px;
+    }
+    .status.ok{background:var(--greenBg);border-color:#bfe7cc;color:var(--green)}
+    .status.warn{background:var(--orangeBg);border-color:#f0d6a2;color:var(--orange)}
+    .status.err{background:var(--redBg);border-color:#f1c2b7;color:var(--red)}
+    .room-box{
+      display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#f7faff;
+      border:1px solid var(--border);border-radius:16px;padding:12px;margin-bottom:12px;
+    }
+    .room-label{font-size:12px;color:var(--muted);font-weight:700}
+    .room-value{font-family:'Kanit',sans-serif;font-size:26px;font-weight:800;color:var(--primary)}
+    .pill{
+      display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:7px 10px;
+      background:#eef5ff;color:var(--primary);font-size:12px;font-weight:800;
+    }
+    .user-box{display:flex;gap:10px;align-items:center;background:#f8fafc;border:1px solid var(--border);border-radius:14px;padding:10px;margin:10px 0 12px}
+    .avatar{width:44px;height:44px;border-radius:50%;background:#dde7f5;object-fit:cover;display:none}
+    .user-title{font-weight:800;color:var(--primary);font-size:14px}
+    .user-sub{font-size:12px;color:var(--muted);margin-top:2px}
+    .button{
+      width:100%;border:none;border-radius:14px;padding:14px 12px;margin-top:8px;cursor:pointer;
+      font-family:'Sarabun',sans-serif;font-size:15px;font-weight:800;transition:transform .15s ease,opacity .15s ease;
+    }
+    .button:active{transform:scale(.985)}
+    .button.primary{background:linear-gradient(135deg,#18a957,#0f8d46);color:#fff}
+    .button.line{background:linear-gradient(135deg,#06c755,#00a84f);color:#fff}
+    .button.secondary{background:#eef5ff;color:var(--primary);border:1px solid #cfe0f8}
+    .button[disabled]{opacity:.55;cursor:not-allowed}
+    .steps{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+    .steps li{display:flex;gap:8px;align-items:flex-start;background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:9px 10px;font-size:13px;line-height:1.5}
+    .num{width:22px;height:22px;flex:0 0 22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--primary);color:#fff;font-size:12px;font-weight:800}
+    .small{font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px}
+    .hidden{display:none!important}
+    .footer{text-align:center;color:var(--muted);font-size:12px;line-height:1.6;padding:6px 4px}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div class="brand">🏠 ห้องเช่าป่านันท์</div>
+      <h1>จับคู่ LINE กับห้องพัก</h1>
+      <p>สำหรับผู้เช่าเข้าใหม่ สแกน QR จากเจ้าของหอ แล้วทำตามขั้นตอนเพื่อรับใบแจ้งค่าเช่าและข้อความที่เกี่ยวข้องทาง LINE</p>
+    </section>
+
+    <section class="card">
+      <div id="systemStatus" class="status">กำลังตรวจสอบลิงก์ QR...</div>
+
+      <div id="pairContent" class="hidden">
+        <div class="room-box">
+          <div>
+            <div class="room-label">ห้องที่จะจับคู่</div>
+            <div class="room-value">ห้อง <span id="roomNum">-</span></div>
+          </div>
+          <div class="pill" id="tokenStatusPill">QR ชั่วคราว</div>
+        </div>
+
+        <div class="user-box">
+          <img id="profileAvatar" class="avatar" alt="LINE Profile">
+          <div>
+            <div class="user-title" id="profileName">กำลังตรวจสอบบัญชี LINE...</div>
+            <div class="user-sub" id="friendshipText">ระบบจะขอให้เพิ่ม LINE OA ก่อนจับคู่</div>
+          </div>
+        </div>
+
+        <button id="friendBtn" class="button line" type="button" onclick="requestFriendshipFlow()">➕ เพิ่ม LINE OA / ปลดบล็อก</button>
+        <button id="confirmBtn" class="button primary" type="button" onclick="completePairing()" disabled>✅ ยืนยันจับคู่ LINE กับห้องนี้</button>
+        <button id="refreshBtn" class="button secondary" type="button" onclick="refreshFriendship()">⟳ ตรวจสอบสถานะ LINE OA อีกครั้ง</button>
+
+        <ul class="steps">
+          <li><span class="num">1</span><span>เพิ่ม LINE OA ของห้องเช่าป่านันท์ให้เรียบร้อย</span></li>
+          <li><span class="num">2</span><span>กด “ยืนยันจับคู่” เพื่อบันทึกบัญชี LINE นี้เข้ากับห้อง</span></li>
+          <li><span class="num">3</span><span>หลังสำเร็จ เจ้าของหอจะเห็นการจับคู่ในระบบและสามารถส่งข้อความแจ้งค่าเช่าได้</span></li>
+        </ul>
+
+        <div class="small" id="expiryText"></div>
+      </div>
+    </section>
+
+    <div class="footer">QR นี้เป็นลิงก์ชั่วคราวและใช้ได้ครั้งเดียว • หากหมดอายุ กรุณาให้เจ้าของหอสร้างใหม่</div>
+  </main>
+
+  <script>
+    const LINE_PAIR_PORTAL_CONFIG = {
+      // LIFF ID สำหรับหน้า Pairing ผู้เช่าใหม่
+      liffId: '2010080282-gZXtNuOU',
+      workerUrl: 'https://white-rice-cf72.joteboony.workers.dev',
+    };
+
+    let pairToken = '';
+    let pairInfo = null;
+    let lineProfile = null;
+    let isFriend = false;
+    let pairingBusy = false;
+
+    const $ = (id) => document.getElementById(id);
+
+    function setStatus(message, type = '') {
+      const box = $('systemStatus');
+      if (!box) return;
+      box.className = 'status' + (type ? ' ' + type : '');
+      box.textContent = message;
+    }
+
+    function showPairContent(show = true) {
+      const box = $('pairContent');
+      if (box) box.classList.toggle('hidden', !show);
+    }
+
+    function readTokenFromLiffUrl() {
+      const directParams = new URLSearchParams(window.location.search || '');
+      const direct = directParams.get('token') || '';
+      if (direct) return direct.trim();
+
+      const state = directParams.get('liff.state') || '';
+      if (state) {
+        const decoded = decodeURIComponent(state);
+        try {
+          const candidate = new URL(decoded, window.location.origin);
+          const token = candidate.searchParams.get('token') || '';
+          if (token) return token.trim();
+        } catch (_) {}
+
+        const q = decoded.includes('?') ? decoded.split('?').slice(1).join('?') : decoded.replace(/^\?/, '');
+        const stateParams = new URLSearchParams(q || '');
+        const token = stateParams.get('token') || '';
+        if (token) return token.trim();
+      }
+
+      const hash = String(window.location.hash || '').replace(/^#/, '');
+      if (hash.includes('token=')) {
+        const hashQuery = hash.includes('?') ? hash.split('?').slice(1).join('?') : hash;
+        const hashParams = new URLSearchParams(hashQuery);
+        const token = hashParams.get('token') || '';
+        if (token) return token.trim();
+      }
+      return '';
+    }
+
+    async function postWorker(payload) {
+      const res = await fetch(LINE_PAIR_PORTAL_CONFIG.workerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload || {}),
+      });
+      const contentType = res.headers.get('Content-Type') || '';
+      const data = contentType.includes('application/json') ? await res.json() : { text: await res.text() };
+      if (!res.ok || data.ok === false) {
+        const err = new Error(data.error || data.text || ('HTTP ' + res.status));
+        err.status = res.status;
+        err.data = data;
+        throw err;
+      }
+      return data;
+    }
+
+    function renderPairInfo(info = {}) {
+      pairInfo = info;
+      $('roomNum').textContent = String(info.roomNum || '-');
+      $('expiryText').textContent = info.expiresAtText
+        ? 'ลิงก์นี้หมดอายุ: ' + info.expiresAtText
+        : (info.expiresAt ? 'ลิงก์นี้หมดอายุ: ' + info.expiresAt : '');
+      $('tokenStatusPill').textContent = info.used ? 'QR ถูกใช้แล้ว' : (info.alreadyLinked ? 'ห้องมี LINE เดิม' : 'QR พร้อมใช้');
+      showPairContent(true);
+    }
+
+    function renderProfile(profile = null) {
+      lineProfile = profile || null;
+      const name = $('profileName');
+      const avatar = $('profileAvatar');
+      if (name) name.textContent = profile?.displayName ? 'บัญชี LINE: ' + profile.displayName : 'บัญชี LINE พร้อมใช้งาน';
+      if (avatar && profile?.pictureUrl) {
+        avatar.src = profile.pictureUrl;
+        avatar.style.display = 'block';
+      }
+    }
+
+    function setFriendshipState(friendFlag, message = '') {
+      isFriend = !!friendFlag;
+      const text = $('friendshipText');
+      const friendBtn = $('friendBtn');
+      const confirmBtn = $('confirmBtn');
+      if (text) {
+        text.textContent = message || (isFriend
+          ? 'เพิ่ม LINE OA แล้ว สามารถกดยืนยันจับคู่ได้'
+          : 'ยังไม่ได้เพิ่ม LINE OA กรุณาเพิ่มก่อนจับคู่');
+      }
+      if (friendBtn) friendBtn.style.display = isFriend ? 'none' : 'block';
+      if (confirmBtn) confirmBtn.disabled = !isFriend || !!pairInfo?.used || !!pairInfo?.alreadyLinked || pairingBusy;
+    }
+
+    async function inspectPairToken() {
+      if (!pairToken) throw new Error('ไม่พบรหัส QR สำหรับจับคู่');
+      const data = await postWorker({ action: 'inspectLinePairToken', token: pairToken });
+      renderPairInfo(data);
+      if (data.used) {
+        setStatus('QR นี้ถูกใช้จับคู่แล้ว กรุณาให้เจ้าของหอสร้าง QR ใหม่', 'warn');
+      } else if (data.alreadyLinked) {
+        setStatus('ห้องนี้มี LINE จับคู่อยู่แล้ว ระบบจะไม่ทับให้อัตโนมัติ', 'warn');
+      } else {
+        setStatus('ลิงก์ QR ถูกต้อง กำลังตรวจสอบ LINE OA...', 'ok');
+      }
+      return data;
+    }
+
+    async function refreshFriendship() {
+      try {
+        const friendship = await liff.getFriendship();
+        setFriendshipState(!!friendship?.friendFlag);
+        if (friendship?.friendFlag && !pairInfo?.used && !pairInfo?.alreadyLinked) {
+          setStatus('เพิ่ม LINE OA แล้ว กดยืนยันจับคู่ได้เลยครับ', 'ok');
+        }
+      } catch (err) {
+        setFriendshipState(false, 'ตรวจสอบสถานะ LINE OA ไม่ได้ กรุณาตรวจสอบว่า LIFF App ผูกกับ LINE Official Account แล้ว');
+        setStatus('ตรวจสอบสถานะ LINE OA ไม่สำเร็จ', 'warn');
+      }
+    }
+
+    async function requestFriendshipFlow() {
+      try {
+        setStatus('กำลังเปิดหน้าขอเพิ่ม LINE OA...', '');
+        await liff.requestFriendship();
+        await refreshFriendship();
+      } catch (err) {
+        setStatus('เปิดหน้าขอเพิ่ม LINE OA ไม่สำเร็จ กรุณาลองใหม่', 'warn');
+      }
+    }
+
+    async function completePairing() {
+      if (pairingBusy) return;
+      if (!isFriend) {
+        setStatus('กรุณาเพิ่ม LINE OA ก่อนยืนยันจับคู่', 'warn');
+        return;
+      }
+      if (!pairToken || !pairInfo?.roomNum) {
+        setStatus('ข้อมูล QR ไม่ครบ กรุณาให้เจ้าของสร้าง QR ใหม่', 'err');
+        return;
+      }
+      pairingBusy = true;
+      const btn = $('confirmBtn');
+      if (btn) btn.disabled = true;
+      try {
+        const idToken = liff.getIDToken();
+        if (!idToken) throw new Error('ไม่พบ LINE ID Token กรุณาเปิดหน้านี้ผ่าน LINE');
+        const data = await postWorker({ action: 'completeLinePairToken', token: pairToken, idToken });
+        setStatus('จับคู่ LINE กับห้อง ' + data.roomNum + ' สำเร็จแล้วครับ ✅', 'ok');
+        $('tokenStatusPill').textContent = 'จับคู่สำเร็จ';
+        if ($('friendBtn')) $('friendBtn').style.display = 'none';
+        if ($('refreshBtn')) $('refreshBtn').style.display = 'none';
+        if (btn) {
+          btn.textContent = '✅ จับคู่สำเร็จแล้ว';
+          btn.disabled = true;
+        }
+      } catch (err) {
+        setStatus(err?.message || 'จับคู่ LINE ไม่สำเร็จ', 'err');
+        if (btn) btn.disabled = false;
+      } finally {
+        pairingBusy = false;
+      }
+    }
+
+    async function boot() {
+      pairToken = readTokenFromLiffUrl();
+      if (!pairToken) {
+        setStatus('ไม่พบรหัส QR สำหรับจับคู่ กรุณาสแกน QR ใหม่จากเจ้าของหอ', 'err');
+        return;
+      }
+
+      if (!LINE_PAIR_PORTAL_CONFIG.liffId || LINE_PAIR_PORTAL_CONFIG.liffId.includes('PUT_PAIR_LIFF_ID_HERE')) {
+        setStatus('หน้านี้ยังไม่ได้ตั้งค่า LIFF ID กรุณาให้เจ้าของหออัปเดตการตั้งค่าก่อนใช้งาน', 'err');
+        return;
+      }
+
+      try {
+        setStatus('กำลังเชื่อมต่อ LINE...', '');
+        await liff.init({ liffId: LINE_PAIR_PORTAL_CONFIG.liffId });
+        if (!liff.isLoggedIn()) {
+          liff.login({ redirectUri: window.location.href });
+          return;
+        }
+
+        const [profile] = await Promise.all([
+          liff.getProfile().catch(() => null),
+          inspectPairToken(),
+        ]);
+
+        renderProfile(profile);
+        if (!pairInfo?.used && !pairInfo?.alreadyLinked) {
+          await refreshFriendship();
+        } else {
+          setFriendshipState(false, pairInfo?.used
+            ? 'QR นี้ถูกใช้แล้ว'
+            : 'ห้องนี้มี LINE จับคู่อยู่แล้ว');
+        }
+      } catch (err) {
+        setStatus(err?.message || 'เปิดหน้า Portal จับคู่ LINE ไม่สำเร็จ', 'err');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', boot);
+  </script>
+</body>
+</html>

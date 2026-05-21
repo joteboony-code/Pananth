@@ -6732,7 +6732,7 @@ body.dark .checklist-item.attn {
       </div>
       <div style="margin-top:8px;">
         <button id="editSendLineLongBtn" onclick="sendLineLongTextFromEdit()" style="width:100%;padding:10px;border:none;border-radius:10px;background:#64748b;color:white;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:800;cursor:pointer;">
-          📝 ส่งข้อความยาวฉุกเฉิน
+          📝 ส่งข้อความ
         </button>
       </div>
       <div style="margin-top:8px;">
@@ -6828,7 +6828,7 @@ body.dark .checklist-item.attn {
       <button class="action-btn img" onclick="saveReceiptPng()">⬇️ บันทึกรูป</button>
     </div>
     <div style="padding:8px 16px 0;display:grid;grid-template-columns:1fr;gap:10px;">
-      <button class="action-btn line" onclick="sendLineAPILongText()" style="background:#64748b;font-size:12px;">📝 ส่งข้อความยาวฉุกเฉิน</button>
+      <button class="action-btn line" onclick="sendLineAPILongText()" style="background:#64748b;font-size:12px;">📝 ส่งข้อความ</button>
     </div>
     <div style="padding:8px 16px 0;display:grid;grid-template-columns:1fr;gap:10px;">
       <button class="action-btn line" onclick="sendLine()" style="background:#06c755;font-size:12px;">📱 ส่ง LINE แบบ Share</button>
@@ -13078,6 +13078,28 @@ async function sendLineFromEdit() {
     totalDue,
     bank,
   });
+  const flexDetailLines = [
+    `⚡ ค่าไฟ: ${ep} → ${ec} (${ec - ep} หน่วย × ${ELEC_RATE}฿) = ${elecAmt.toLocaleString()}฿`,
+    `💧 ค่าน้ำ: ${wp} → ${wc} (${wc - wp} หน่วย × ${WATER_RATE}฿) = ${waterAmt.toLocaleString()}฿`,
+    `🏠 ${rentLabel}: ${rent.toLocaleString()}฿`,
+    `🗑️ ค่าขยะ: ${trash}฿`,
+    wifi ? `📶 WiFi: ${wifi}฿` : '',
+    oldDebt ? `📌 ยอดค้างเก่า: ${oldDebt.toLocaleString()}฿` : '',
+    manualPaid ? `✅ ชำระแล้วบางส่วน: -${manualPaid.toLocaleString()}฿` : '',
+    manualPaid ? `ยอดรอบนี้เต็ม: ${fullTotal.toLocaleString()}฿` : '',
+  ].filter(Boolean).join('\n');
+  const message = renderLineTemplateLocal('rentNotice', {
+    shopName: shop.name || 'ห้องเช่าป่านันท์',
+    room: r,
+    tenantName,
+    tenantNameLine: tenantName ? `👤 ${tenantName}\n` : '',
+    billingMonth: getTenantBillingText(),
+    date: formatDate(),
+    detailLines: flexDetailLines,
+    totalDue: totalDue.toLocaleString('th-TH'),
+    bank,
+    portalUrl: 'https://liff.line.me/2010080282-Fe44Yy7Z',
+  });
 
   if (!confirm(testRoom ? 'ยืนยันส่ง Flex ทดสอบห้อง 99 ไปหาเจ้าของใช่ไหมครับ?' : `ยืนยันส่ง Flex แจ้งค่าเช่าห้อง ${r} ใช่ไหมครับ?`)) return;
 
@@ -13093,8 +13115,8 @@ async function sendLineFromEdit() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(testRoom
-        ? { action: 'sendRentNoticeFlex', toOwner: true, roomNum: r, flexData }
-        : { action: 'sendRentNoticeFlex', userId, roomNum: r, flexData }),
+        ? { action: 'sendRentNoticeFlex', toOwner: true, roomNum: r, flexData, message }
+        : { action: 'sendRentNoticeFlex', userId, roomNum: r, flexData, message }),
     });
     const result = await res.json();
     if (res.ok) {
@@ -13203,14 +13225,14 @@ async function sendLineLongTextFromEdit() {
     const res = await fetch(cfg.worker, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(testRoom ? { action: 'sendOwnerMessage', message } : { userId, message, roomNum: r, messageKind: 'rentNotice' }),
+      body: JSON.stringify(testRoom ? { action: 'sendOwnerMessage', message } : { userId, message, roomNum: r, messageKind: 'rentNotice', portalFlex: false }),
     });
     const result = await res.json();
     if (result.sentMessages || res.ok) {
       btn.textContent = '✅ ส่งแล้ว!';
       btn.style.background = '#2e7d52';
       setTimeout(() => {
-        btn.textContent = '📝 ส่งข้อความยาวฉุกเฉิน';
+        btn.textContent = '📝 ส่งข้อความ';
         btn.style.background = '';
         btn.disabled = false;
       }, 3000);
@@ -13219,7 +13241,7 @@ async function sendLineLongTextFromEdit() {
     }
   } catch (err) {
     alert('ส่งไม่สำเร็จ: ' + err.message);
-    btn.textContent = '📝 ส่งข้อความยาวฉุกเฉิน';
+    btn.textContent = '📝 ส่งข้อความ';
     btn.disabled = false;
   }
 }
@@ -15552,11 +15574,12 @@ ${details}${more}
     if (!userId) { failed++; continue; }
     const flexData = buildTenantRentFlexPayload(r);
     if (!flexData) { failed++; continue; }
+    const message = buildTenantMessage(r);
     try {
       const res = await fetch(WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sendRentNoticeFlex', userId, roomNum: r, flexData }),
+        body: JSON.stringify({ action: 'sendRentNoticeFlex', userId, roomNum: r, flexData, message }),
       });
       if (!res.ok) throw new Error(await res.text());
       sent++;
@@ -17349,6 +17372,28 @@ async function sendLineAPI() {
     totalDue,
     bank,
   });
+  const flexDetailLines = [
+    `⚡ ค่าไฟ: ${ep} → ${ec} (${ec - ep} หน่วย × ${ELEC_RATE}฿) = ${elecAmt.toLocaleString()}฿`,
+    `💧 ค่าน้ำ: ${wp} → ${wc} (${wc - wp} หน่วย × ${WATER_RATE}฿) = ${waterAmt.toLocaleString()}฿`,
+    `🏠 ค่าเช่า: ${rent.toLocaleString()}฿`,
+    `🗑️ ค่าขยะ: ${trash}฿`,
+    wifi ? `📶 WiFi: ${wifi}฿` : '',
+    oldDebt ? `📌 ยอดค้างเก่า: ${oldDebt.toLocaleString()}฿` : '',
+    manualPaid ? `✅ ชำระแล้วบางส่วน: -${manualPaid.toLocaleString()}฿` : '',
+    manualPaid ? `ยอดรอบนี้เต็ม: ${fullTotal.toLocaleString()}฿` : '',
+  ].filter(Boolean).join('\n');
+  const message = renderLineTemplateLocal('rentNotice', {
+    shopName: shopName || 'ห้องเช่าป่านันท์',
+    room: r,
+    tenantName,
+    tenantNameLine: tenantName ? `👤 ${tenantName}\n` : '',
+    billingMonth: getTenantBillingText(),
+    date: formatDate(),
+    detailLines: flexDetailLines,
+    totalDue: totalDue.toLocaleString('th-TH'),
+    bank,
+    portalUrl: 'https://liff.line.me/2010080282-Fe44Yy7Z',
+  });
 
   if (!confirm(`ยืนยันส่ง Flex แจ้งค่าเช่าห้อง ${r} ใช่ไหมครับ?`)) return;
 
@@ -17370,6 +17415,7 @@ async function sendLineAPI() {
         userId,
         roomNum: r,
         flexData,
+        message,
       }),
     });
     const result = await res.json();
@@ -17456,7 +17502,7 @@ async function sendLineAPILongText() {
     const res = await fetch(cfg.worker, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, message, roomNum: r, messageKind: 'rentNotice' }),
+      body: JSON.stringify({ userId, message, roomNum: r, messageKind: 'rentNotice', portalFlex: false }),
     });
     const result = await res.json();
 
@@ -17464,7 +17510,7 @@ async function sendLineAPILongText() {
       btn.textContent = '✅ ส่งแล้ว!';
       btn.style.background = '#2e7d52';
       setTimeout(() => {
-        btn.textContent = '📝 ส่งข้อความยาวฉุกเฉิน';
+        btn.textContent = '📝 ส่งข้อความ';
         btn.style.background = '';
         btn.disabled = false;
       }, 3000);
@@ -17473,7 +17519,7 @@ async function sendLineAPILongText() {
     }
   } catch (err) {
     alert('ส่งไม่สำเร็จครับ: ' + err.message);
-    btn.textContent = '📝 ส่งข้อความยาวฉุกเฉิน';
+    btn.textContent = '📝 ส่งข้อความ';
     btn.disabled = false;
   }
 }
@@ -18803,10 +18849,10 @@ document.head.appendChild(s);
     try{
       document.querySelectorAll('body *').forEach(function(el){
         if (!el || el.children.length) return;
-        var text = (el.textContent || '').replace(/s+/g, ' ').trim();
+        var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
         if (!text) return;
         if (text.length > 80) return;
-        var m = text.match(/^รอบบิลs+(.+?)s*/s*รับชำระs+.+$/);
+        var m = text.match(/^รอบบิล\s+(.+?)\s*\/\s*รับชำระ\s+.+$/);
         if (m && m[1]) el.textContent = 'รอบเดือน ' + m[1].trim();
       });
     }catch(e){}

@@ -3,6 +3,8 @@
   "version": "15.4.2.103",
   "private": true,
   "scripts": {
+    "build": "node scripts/sync-public.mjs",
+    "predeploy": "npm run build",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

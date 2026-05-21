@@ -150,7 +150,7 @@
     .room-select-sub{font-size:12px;color:var(--muted);margin-top:3px}
 
     /* ── SUMMARY GRID ── */
-    .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .summary-grid{display:grid;grid-template-columns:1fr;gap:10px}
     .summary-card{
       border-radius:18px;border:1px solid #e2ecf8;padding:14px;min-height:88px;
       background:linear-gradient(145deg,#f7fbff,#edf5ff);
@@ -166,6 +166,8 @@
       display:flex;justify-content:space-between;gap:12px;align-items:center;
       padding:12px 14px;border-radius:16px;border:1px solid #e8f0f8;background:#f9fcff;
     }
+    .bill-row-label{display:grid;gap:3px;min-width:0}
+    .bill-meter{font-size:11px;color:var(--muted);font-weight:700;line-height:1.35}
     .bill-row strong{color:var(--primary);font-weight:800}
     .bill-row.total{
       background:linear-gradient(135deg,#0f3461,#2463b0);color:#fff;border:none;
@@ -411,14 +413,6 @@
       </div>
       <div class="summary-grid">
         <div class="summary-card">
-          <div class="summary-label">เลขมิเตอร์น้ำ</div>
-          <div class="summary-value" id="overviewWaterMeter">-</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-label">เลขมิเตอร์ไฟ</div>
-          <div class="summary-value" id="overviewElectricMeter">-</div>
-        </div>
-        <div class="summary-card">
           <div class="summary-label">ยอดค้างเก่า</div>
           <div class="summary-value" id="overviewArrears">-</div>
         </div>
@@ -434,8 +428,8 @@
       </div>
       <div class="bill-list">
         <div class="bill-row"><span>🏠 ค่าเช่าห้อง</span><strong id="billRent">-</strong></div>
-        <div class="bill-row"><span id="billWaterLabel">💧 ค่าน้ำ</span><strong id="billWater">-</strong></div>
-        <div class="bill-row"><span id="billElectricLabel">⚡ ค่าไฟ</span><strong id="billElectric">-</strong></div>
+        <div class="bill-row"><span class="bill-row-label"><span id="billWaterLabel">💧 ค่าน้ำ</span><small class="bill-meter" id="billWaterMeter">-</small></span><strong id="billWater">-</strong></div>
+        <div class="bill-row"><span class="bill-row-label"><span id="billElectricLabel">⚡ ค่าไฟ</span><small class="bill-meter" id="billElectricMeter">-</small></span><strong id="billElectric">-</strong></div>
         <div class="bill-row"><span>🗑️ ค่าขยะ</span><strong id="billTrash">-</strong></div>
         <div class="bill-row"><span>📶 Wi‑Fi</span><strong id="billWifi">-</strong></div>
         <div class="bill-row total"><span>ยอดรวมรอบนี้</span><strong id="billExpected">-</strong></div>
@@ -814,15 +808,15 @@
       $('overviewRoomNum').textContent = room.roomNum || '-';
       $('overviewBillingText').textContent = `รอบบิล ${text(billing.billingMonthText)} • รับชำระใน ${text(billing.paymentMonthText)}`;
       $('overviewStatusChip').textContent = status.icon + ' ' + status.label;
-      $('overviewWaterMeter').textContent = `${text(meters.wp,'0')} → ${text(meters.wc,'0')}`;
-      $('overviewElectricMeter').textContent = `${text(meters.ep,'0')} → ${text(meters.ec,'0')}`;
       $('overviewArrears').textContent = money(amounts.arrearsTotal || 0);
 
       $('billMetaText').textContent = `รอบบิล ${text(billing.billingMonthText)} • รับชำระใน ${text(billing.paymentMonthText)}`;
       $('billRent').textContent = money(amounts.rent || 0);
       $('billWaterLabel').textContent = `💧 ค่าน้ำ ${Number(amounts.waterUnits||0).toLocaleString('th-TH')} หน่วย × ${Number(amounts.waterRate||35).toLocaleString('th-TH')}`;
+      $('billWaterMeter').textContent = `เลขมิเตอร์ ${text(meters.wp,'0')} → ${text(meters.wc,'0')}`;
       $('billWater').textContent = money(amounts.waterAmount || 0);
       $('billElectricLabel').textContent = `⚡ ค่าไฟ ${Number(amounts.electricUnits||0).toLocaleString('th-TH')} หน่วย × ${Number(amounts.electricRate||8).toLocaleString('th-TH')}`;
+      $('billElectricMeter').textContent = `เลขมิเตอร์ ${text(meters.ep,'0')} → ${text(meters.ec,'0')}`;
       $('billElectric').textContent = money(amounts.electricAmount || 0);
       $('billTrash').textContent = money(amounts.trash || 0);
       $('billWifi').textContent = money(amounts.wifi || 0);

@@ -18796,5 +18796,31 @@ document.head.appendChild(s);
   </div>
 </div>
 
+<!-- PANANTH_MONTH_BADGE_SHORT_TEXT_PATCH -->
+<script>
+(function(){
+  function pananthShortMonthBadgeText(){
+    try{
+      document.querySelectorAll('body *').forEach(function(el){
+        if (!el || el.children.length) return;
+        var text = (el.textContent || '').replace(/s+/g, ' ').trim();
+        if (!text) return;
+        if (text.length > 80) return;
+        var m = text.match(/^รอบบิลs+(.+?)s*/s*รับชำระs+.+$/);
+        if (m && m[1]) el.textContent = 'รอบเดือน ' + m[1].trim();
+      });
+    }catch(e){}
+  }
+  document.addEventListener('DOMContentLoaded', pananthShortMonthBadgeText);
+  setTimeout(pananthShortMonthBadgeText, 200);
+  setTimeout(pananthShortMonthBadgeText, 1000);
+  if (window.MutationObserver) {
+    var obs = new MutationObserver(function(){ pananthShortMonthBadgeText(); });
+    document.addEventListener('DOMContentLoaded', function(){
+      if (document.body) obs.observe(document.body, { childList:true, subtree:true, characterData:true });
+    });
+  }
+})();
+</script>
 </body>
 </html>

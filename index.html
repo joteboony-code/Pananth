@@ -6467,47 +6467,7 @@ body.dark .checklist-item.attn {
   <div id="lineMessageQuotaFoot" style="display:none;font-size:11px;color:var(--muted);line-height:1.55;margin-top:8px;"></div>
 </div>
 
-<div class="owner-assistant-layout">
-  <section class="owner-assistant-card">
-    <div class="owner-assistant-head">
-      <div>
-        <div class="owner-assistant-title">📌 สิ่งที่ควรทำตอนนี้</div>
-        <div class="owner-assistant-sub">ระบบสรุปลำดับงานสำคัญของรอบปัจจุบันให้ทันที</div>
-      </div>
-      <button class="owner-assistant-refresh" onclick="renderOwnerAssistantCenter()" title="คำนวณใหม่">↻</button>
-    </div>
-    <div class="owner-action-list" id="ownerNextActionList">
-      <div class="owner-action-item"><div class="owner-action-body"><div class="owner-action-title">กำลังเตรียมสรุป...</div></div></div>
-    </div>
-  </section>
 
-  <section class="owner-assistant-card">
-    <div class="owner-assistant-head">
-      <div>
-        <div class="owner-assistant-title">🔔 ศูนย์แจ้งเตือนเจ้าของ</div>
-        <div class="owner-assistant-sub">รายการที่ควรตรวจหรือจัดการต่อจากข้อมูลล่าสุด</div>
-      </div>
-      <button class="owner-assistant-refresh" onclick="refreshData()" title="โหลดข้อมูลล่าสุด">⟳</button>
-    </div>
-    <div class="owner-notice-list" id="ownerNoticeList">
-      <div class="owner-notice-item"><div class="owner-notice-body"><div class="owner-notice-title">กำลังเตรียมแจ้งเตือน...</div></div></div>
-    </div>
-  </section>
-</div>
-
-<div class="monthly-checklist-wrap">
-  <section class="monthly-checklist-card">
-    <div class="checklist-head">
-      <div>
-        <div class="checklist-title">✅ เช็กลิสต์งานประจำเดือน</div>
-        <div class="checklist-sub" id="monthlyChecklistSub">สรุปสถานะของรอบบิลปัจจุบัน</div>
-      </div>
-      <button class="owner-assistant-refresh" onclick="renderOwnerAssistantCenter()" title="คำนวณใหม่">↻</button>
-    </div>
-    <div class="checklist-progress"><div class="checklist-progress-bar" id="monthlyChecklistProgressBar" style="width:0%;"></div></div>
-    <div class="checklist-grid" id="monthlyChecklistGrid"></div>
-  </section>
-</div>
 
 <div class="month-action-row">
   <button type="button" class="month-action-btn open-month" id="openCycleBtn" onclick="openNewBillingMonth()">

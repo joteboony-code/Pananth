@@ -243,7 +243,7 @@
     }
     .meter-photo-empty{padding:15px;color:var(--muted);font-weight:800;line-height:1.6}
 
-    /* ── QR TOGGLE ── */
+    /* ── PAYMENT QR ── */
     .qr-toggle-card{
       margin-top:14px;border:1px solid var(--border);border-radius:22px;
       background:linear-gradient(145deg,#f7faff,#eef5ff);overflow:hidden;
@@ -251,7 +251,7 @@
     .qr-toggle-head{
       width:100%;border:none;background:transparent;padding:16px;
       display:flex;justify-content:space-between;align-items:center;gap:12px;
-      cursor:pointer;text-align:left;font:inherit;color:var(--text);
+      text-align:left;font:inherit;color:var(--text);
     }
     .qr-toggle-title{font-family:'Kanit',sans-serif;font-size:16px;font-weight:800;color:var(--primary)}
     .qr-toggle-sub{font-size:12px;color:var(--muted);line-height:1.5;margin-top:2px}
@@ -262,8 +262,7 @@
       color:#fff;font-size:12px;font-weight:900;
       box-shadow:0 6px 14px rgba(15,52,97,.22);
     }
-    .qr-panel{display:none;border-top:1px solid var(--border);padding:16px;background:#fff}
-    .qr-panel.open{display:block}
+    .qr-panel{display:block;border-top:1px solid var(--border);padding:16px;background:#fff}
     .qr-panel-note{text-align:center;font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px;font-weight:800}
     .qr-image-wrap{
       width:min(100%,430px);margin:0 auto;padding:10px;
@@ -276,6 +275,14 @@
     .qr-amount-label{text-align:center;font-family:'Kanit',sans-serif;font-weight:900;color:var(--primary);font-size:22px;margin-bottom:10px}
     .qr-empty{padding:18px;text-align:center;color:var(--muted);font-weight:800;line-height:1.6}
     .qr-footer-hint{text-align:center;color:var(--muted);font-size:12px;line-height:1.5;margin-top:12px}
+    .qr-download-btn{
+      width:100%;margin-top:14px;border:none;border-radius:18px;padding:15px 14px;
+      background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;font:inherit;
+      font-size:15px;font-weight:900;cursor:pointer;
+      box-shadow:0 12px 26px rgba(15,52,97,.20);transition:transform .12s;
+    }
+    .qr-download-btn:active{transform:scale(.97)}
+    .qr-download-btn:disabled{opacity:.55;cursor:not-allowed}
     .qr-return-chat-btn{
       width:100%;margin-top:14px;border:none;border-radius:18px;padding:15px 14px;
       background:linear-gradient(135deg,#06c755,#04a844);color:#fff;font:inherit;
@@ -448,13 +455,13 @@
       </div>
 
       <div class="qr-toggle-card">
-        <button id="tenantPaymentQrToggle" class="qr-toggle-head" type="button" onclick="toggleTenantPaymentQr()">
+        <div class="qr-toggle-head">
           <div>
             <div class="qr-toggle-title">📱 QR พร้อมเพย์สำหรับชำระค่าเช่า</div>
-            <div class="qr-toggle-sub">กดเพื่อแสดง QR ให้ผู้เช่าสแกนจ่ายจากแอปธนาคาร</div>
+            <div class="qr-toggle-sub">สแกนจ่ายได้ทันที ยอดเงินถูกใส่ไว้ใน QR แล้ว</div>
           </div>
-          <span id="tenantPaymentQrToggleText" class="qr-toggle-pill">แสดง QR ▾</span>
-        </button>
+          <span class="qr-toggle-pill">พร้อมจ่าย</span>
+        </div>
         <div id="tenantPaymentQrPanel" class="qr-panel">
           <div class="qr-panel-note">
             สแกน QR นี้เพื่อโอนชำระค่าเช่า<br>
@@ -467,6 +474,7 @@
             </div>
           </div>
           <div id="tenantPaymentQrHint" class="qr-footer-hint">บัญชีรับเงินตาม QR: นาย บุญรัตน์ ชลา</div>
+          <button id="tenantPaymentQrDownloadBtn" class="qr-download-btn" type="button" onclick="downloadTenantPaymentQr()">⬇️ ดาวน์โหลด QR ลงมือถือ</button>
           <button class="qr-return-chat-btn" type="button" onclick="returnToLineChatForSlip()">📤 โอนแล้ว กลับไปส่งสลิปในแชต LINE</button>
           <div class="qr-return-chat-hint">ปุ่มนี้จะปิดหน้า Portal แล้วพากลับไปยัง LINE เพื่อส่งสลิปต่อ</div>
         </div>
@@ -614,10 +622,12 @@
       const qrBox = $('tenantPaymentQrCode');
       const amountLabel = $('tenantPaymentQrAmount');
       const hint = $('tenantPaymentQrHint');
+      const downloadBtn = $('tenantPaymentQrDownloadBtn');
       if (amountLabel) amountLabel.textContent = amount > 0 ? `ยอดโอน ${money(amount)}` : 'ไม่มียอดค้างชำระ';
       if (hint) {
         hint.textContent = `บัญชีรับเงินตาม QR: ${TENANT_PORTAL_CONFIG.promptPayReceiverName} • ห้อง ${room?.roomNum || '-'}`;
       }
+      if (downloadBtn) downloadBtn.disabled = amount <= 0;
       if (!qrBox) return;
 
       qrBox.innerHTML = '';
@@ -631,6 +641,7 @@
         img.loading = 'lazy';
         img.src = 'promptpay-rent-qr.jpg';
         qrBox.appendChild(img);
+        if (downloadBtn) downloadBtn.disabled = true;
         if (hint) hint.textContent += ' • ไม่สามารถสร้าง QR ระบุยอดได้ กรุณารีเฟรชหน้าอีกครั้ง';
         return;
       }
@@ -642,6 +653,74 @@
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.M,
       });
+    }
+
+    async function qrElementToImage(qrBox) {
+      const canvas = qrBox?.querySelector('canvas');
+      if (canvas) return canvas;
+      const img = qrBox?.querySelector('img');
+      if (!img) throw new Error('ยังไม่พบรูป QR สำหรับดาวน์โหลด');
+      if (!img.complete) {
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => reject(new Error('โหลดรูป QR ไม่สำเร็จ'));
+        });
+      }
+      return img;
+    }
+
+    async function downloadTenantPaymentQr() {
+      try {
+        const room = (portalData?.rooms || []).find(item => String(item.roomNum) === String(selectedRoomNum));
+        if (!room) return alert('ไม่พบห้องที่เลือก');
+        const amount = Math.max(0, Number(room?.amounts?.totalRemaining || room?.amounts?.currentRemaining || 0));
+        if (amount <= 0) return alert('ห้องนี้ไม่มียอดค้างชำระให้ดาวน์โหลด QR');
+
+        const source = await qrElementToImage($('tenantPaymentQrCode'));
+        const canvas = document.createElement('canvas');
+        canvas.width = 900;
+        canvas.height = 1120;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('เตรียมไฟล์ QR ไม่สำเร็จ');
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#0f3461';
+        ctx.textAlign = 'center';
+        ctx.font = '700 44px Kanit, Sarabun, sans-serif';
+        ctx.fillText('QR พร้อมเพย์ชำระค่าเช่า', 450, 95);
+        ctx.font = '800 74px Kanit, Sarabun, sans-serif';
+        ctx.fillText(`ยอดโอน ${money(amount)}`, 450, 190);
+        ctx.fillStyle = '#5a6a80';
+        ctx.font = '700 34px Sarabun, sans-serif';
+        ctx.fillText(`ห้อง ${room.roomNum || '-'} • ${TENANT_PORTAL_CONFIG.promptPayReceiverName}`, 450, 250);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#d4e0f0';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+          ctx.roundRect(90, 300, 720, 720, 42);
+        } else {
+          ctx.rect(90, 300, 720, 720);
+        }
+        ctx.fill();
+        ctx.stroke();
+        ctx.drawImage(source, 150, 360, 600, 600);
+
+        ctx.fillStyle = '#5a6a80';
+        ctx.font = '700 28px Sarabun, sans-serif';
+        ctx.fillText('หลังโอนแล้ว กรุณาแนบสลิปใน Tenant Portal หรือ LINE OA', 450, 1060);
+
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = `pananth-room-${String(room.roomNum || 'tenant').replace(/[^\w-]+/g, '')}-promptpay-${Math.round(amount)}.png`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } catch(err) {
+        alert('ดาวน์โหลด QR ไม่สำเร็จ: ' + (err?.message || err));
+      }
     }
 
     function setNotice(message, type = '') {
@@ -662,15 +741,6 @@
       if (key === 'partial') return { label:'ชำระบางส่วน', cls:'partial', icon:'🟠' };
       if (key === 'vacant') return { label:'ห้องว่าง', cls:'vacant', icon:'🔑' };
       return { label:'ยังไม่ชำระ', cls:'unpaid', icon:'🔴' };
-    }
-
-    function toggleTenantPaymentQr() {
-      const panel = $('tenantPaymentQrPanel');
-      const label = $('tenantPaymentQrToggleText');
-      if (!panel) return;
-      const willOpen = !panel.classList.contains('open');
-      panel.classList.toggle('open', willOpen);
-      if (label) label.textContent = willOpen ? 'ซ่อน QR ▴' : 'แสดง QR ▾';
     }
 
     function returnToLineChatForSlip() {

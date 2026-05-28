@@ -6,6 +6,7 @@
   <title>ป่านันท์ • ข้อมูลค่าเช่าของฉัน v15.4.2.92</title>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Kanit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root{
       --bg:#f0f4fa;--card:#fff;--primary:#0f3461;--primary2:#2463b0;--accent:#ffb84d;
@@ -270,6 +271,10 @@
       box-shadow:0 10px 28px rgba(20,55,100,.12);
     }
     .qr-image-wrap img{display:block;width:100%;height:auto;border-radius:16px}
+    .qr-code-box{display:grid;place-items:center;min-height:260px;padding:8px;border-radius:16px;background:#fff}
+    .qr-code-box canvas,.qr-code-box img{width:min(100%,300px)!important;height:auto!important;border-radius:12px}
+    .qr-amount-label{text-align:center;font-family:'Kanit',sans-serif;font-weight:900;color:var(--primary);font-size:22px;margin-bottom:10px}
+    .qr-empty{padding:18px;text-align:center;color:var(--muted);font-weight:800;line-height:1.6}
     .qr-footer-hint{text-align:center;color:var(--muted);font-size:12px;line-height:1.5;margin-top:12px}
     .qr-return-chat-btn{
       width:100%;margin-top:14px;border:none;border-radius:18px;padding:15px 14px;
@@ -456,9 +461,12 @@
             หลังโอนแล้ว แนบสลิปใน Portal ได้ทันที หรือส่งสลิปในแชต LINE OA ได้ตามปกติ
           </div>
           <div class="qr-image-wrap">
-            <img src="promptpay-rent-qr.jpg" alt="QR PromptPay สำหรับชำระค่าเช่า" loading="lazy">
+            <div id="tenantPaymentQrAmount" class="qr-amount-label">-</div>
+            <div id="tenantPaymentQrCode" class="qr-code-box">
+              <img src="promptpay-rent-qr.jpg" alt="QR PromptPay สำหรับชำระค่าเช่า" loading="lazy">
+            </div>
           </div>
-          <div class="qr-footer-hint">บัญชีรับเงินตาม QR: นาย บุญรัตน์ ชลา</div>
+          <div id="tenantPaymentQrHint" class="qr-footer-hint">บัญชีรับเงินตาม QR: นาย บุญรัตน์ ชลา</div>
           <button class="qr-return-chat-btn" type="button" onclick="returnToLineChatForSlip()">📤 โอนแล้ว กลับไปส่งสลิปในแชต LINE</button>
           <div class="qr-return-chat-hint">ปุ่มนี้จะปิดหน้า Portal แล้วพากลับไปยัง LINE เพื่อส่งสลิปต่อ</div>
         </div>
@@ -546,6 +554,8 @@
     const TENANT_PORTAL_CONFIG = {
       liffId: '2010080282-Fe44Yy7Z',
       workerUrl: 'https://white-rice-cf72.joteboony.workers.dev',
+      promptPayId: '0909799795',
+      promptPayReceiverName: 'นาย บุญรัตน์ ชลา',
     };
 
     let portalData = null;
@@ -559,6 +569,80 @@
     const escapeHtml = (value = '') => String(value ?? '')
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+    function emvField(id, value) {
+      const textValue = String(value ?? '');
+      return String(id).padStart(2, '0') + String(textValue.length).padStart(2, '0') + textValue;
+    }
+
+    function crc16CcittFalse(input) {
+      let crc = 0xFFFF;
+      for (let i = 0; i < input.length; i++) {
+        crc ^= input.charCodeAt(i) << 8;
+        for (let bit = 0; bit < 8; bit++) {
+          crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1);
+          crc &= 0xFFFF;
+        }
+      }
+      return crc.toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    function normalizePromptPayTarget(value = '') {
+      const raw = String(value || '').replace(/\D/g, '');
+      if (raw.length === 10 && raw.startsWith('0')) return '0066' + raw.slice(1);
+      return raw;
+    }
+
+    function makePromptPayPayload(amount) {
+      const safeAmount = Math.max(0, Number(amount || 0));
+      const target = normalizePromptPayTarget(TENANT_PORTAL_CONFIG.promptPayId);
+      const merchantAccountInfo = emvField('00', 'A000000677010111') + emvField('01', target);
+      const withoutCrc = [
+        emvField('00', '01'),
+        emvField('01', '12'),
+        emvField('29', merchantAccountInfo),
+        emvField('53', '764'),
+        emvField('54', safeAmount.toFixed(2)),
+        emvField('58', 'TH'),
+        '6304',
+      ].join('');
+      return withoutCrc + crc16CcittFalse(withoutCrc);
+    }
+
+    function renderTenantPaymentQr(room) {
+      const amount = Math.max(0, Number(room?.amounts?.totalRemaining || room?.amounts?.currentRemaining || 0));
+      const qrBox = $('tenantPaymentQrCode');
+      const amountLabel = $('tenantPaymentQrAmount');
+      const hint = $('tenantPaymentQrHint');
+      if (amountLabel) amountLabel.textContent = amount > 0 ? `ยอดโอน ${money(amount)}` : 'ไม่มียอดค้างชำระ';
+      if (hint) {
+        hint.textContent = `บัญชีรับเงินตาม QR: ${TENANT_PORTAL_CONFIG.promptPayReceiverName} • ห้อง ${room?.roomNum || '-'}`;
+      }
+      if (!qrBox) return;
+
+      qrBox.innerHTML = '';
+      if (amount <= 0) {
+        qrBox.innerHTML = '<div class="qr-empty">ห้องนี้ไม่มียอดคงเหลือให้ชำระในตอนนี้</div>';
+        return;
+      }
+      if (typeof QRCode !== 'function') {
+        const img = new Image();
+        img.alt = 'QR PromptPay สำหรับชำระค่าเช่า';
+        img.loading = 'lazy';
+        img.src = 'promptpay-rent-qr.jpg';
+        qrBox.appendChild(img);
+        if (hint) hint.textContent += ' • ไม่สามารถสร้าง QR ระบุยอดได้ กรุณารีเฟรชหน้าอีกครั้ง';
+        return;
+      }
+      new QRCode(qrBox, {
+        text: makePromptPayPayload(amount),
+        width: 300,
+        height: 300,
+        colorDark: '#0b1220',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+    }
 
     function setNotice(message, type = '') {
       const notice = $('systemNotice');
@@ -828,6 +912,7 @@
         ? Math.max(0, Math.min(100, (Number(amounts.currentPaid||0) / Number(amounts.expected||1)) * 100))
         : 0;
       $('billProgressBar').style.width = pct.toFixed(2) + '%';
+      renderTenantPaymentQr(room);
 
       renderMeterPhotos(room.meterPhotos || []);
       renderRepairRequests(room.repairRequests || []);
